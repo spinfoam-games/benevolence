@@ -1,0 +1,24 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*~
+.vscode/
+.idea/
+
+# FlashDevelop / AS3 build output
+flash-version/obj/
+flash-version/bin/
+*.swf
+*.swc
+*.cache
+
+# Raw Promo Content (Not yet processed)
+flash-version/assets/promo/screenshots
+
+# Node / JS
+node_modules/
+dist/
+build/
+*.log
+npm-debug.log*
