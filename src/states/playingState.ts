@@ -70,16 +70,27 @@ export const PlayingState = {
 		root.className = "state playing-state";
 		PlayingState.root = root;
 
+		//	The puzzle, character and speech bubble stay inside this fixed-size
+		//	region anchored to the top-left; the HUD (labels, return button) is
+		//	positioned against the whole page instead.
+		const field = document.createElement("div");
+		field.className = "play-field";
+		root.appendChild(field);
+
 		//	Puzzle canvas
 		const canvas = document.createElement("canvas");
 		canvas.width = 600;
 		canvas.height = 600;
 		canvas.className = "puzzle-canvas";
-		root.appendChild(canvas);
+		field.appendChild(canvas);
 		PlayingState.canvas = canvas;
 		PlayingState.ctx = canvas.getContext("2d");
 
-		//	Labels (top right)
+		//	HUD (labels + return button), pinned to the top-right of the page
+		const hud = document.createElement("div");
+		hud.className = "playing-hud";
+		root.appendChild(hud);
+
 		const labels = document.createElement("div");
 		labels.className = "playing-labels";
 
@@ -105,7 +116,7 @@ export const PlayingState = {
 		labels.appendChild(levelLabel);
 		labels.appendChild(PlayingState.movesLabel);
 		labels.appendChild(PlayingState.timeLabel);
-		root.appendChild(labels);
+		hud.appendChild(labels);
 
 		PlayingState.puzzleSize = levelData.size;
 		PlayingState.blocks = levelData.blocks.slice();
@@ -117,7 +128,7 @@ export const PlayingState = {
 		person.className = "person";
 		const personImg = Assets.cloneImage(Assets.PEOPLE[Math.floor(Math.random() * Assets.PEOPLE.length)]);
 		person.appendChild(personImg);
-		root.appendChild(person);
+		field.appendChild(person);
 
 		const bubble = document.createElement("div");
 		bubble.className = "speech-bubble";
@@ -132,14 +143,14 @@ export const PlayingState = {
 		PlayingState.heartEl.style.display = "none";
 		bubble.appendChild(PlayingState.heartEl);
 
-		root.appendChild(bubble);
+		field.appendChild(bubble);
 
-		//	Return button
+		//	Return button (stacked under the stats in the top-right HUD)
 		PlayingState.returnButton = UI.hoverButton("Button_Return_Off", "Button_Return_Over", () => {
 			Game.showTitle();
 		});
 		PlayingState.returnButton.className += " return-button";
-		root.appendChild(PlayingState.returnButton);
+		hud.appendChild(PlayingState.returnButton);
 
 		//	Remove the bottom-right block to create the empty slot
 		const size = PlayingState.puzzleSize;

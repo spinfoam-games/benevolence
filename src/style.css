@@ -21,21 +21,28 @@ html, body {
 	margin: 0;
 	padding: 0;
 	background: #333333;
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	min-height: 100vh;
 }
 
-/*	The 600x600 "stage" */
+/*	The game fills the page; the background image tiles across the whole
+	viewport. Individual screens anchor their content to the top-left. */
 #game {
 	position: relative;
-	width: 600px;
-	height: 600px;
+	width: 100%;
+	min-height: 100vh;
 	overflow: hidden;
-	background: url('/assets/images/Background.png');
+	background: url('/assets/images/Background.png') repeat;
 	user-select: none;
 	font-family: 'Sniglet', sans-serif;
+}
+
+/*	Fixed-size region (top-left) that keeps the puzzle, character and speech
+	bubble where they have always been, even though the page is now full-width. */
+.play-field {
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 600px;
+	height: 600px;
 }
 
 #loading {
@@ -66,6 +73,17 @@ html, body {
 .state {
 	position: absolute;
 	inset: 0;
+}
+
+/*	The title and editor screens are still designed around the original
+	600x600 stage, anchored to the top-left. Only the playing state spreads
+	its HUD across the full page. */
+.title-state,
+.editor-state {
+	right: auto;
+	bottom: auto;
+	width: 600px;
+	height: 600px;
 }
 
 .puzzle-canvas {
@@ -338,17 +356,31 @@ html, body {
 
 /*	Playing state */
 
-.playing-labels {
+/*	Stats + return button HUD: pinned to the top-right corner of the whole
+	page (not the puzzle region). */
+.playing-hud {
 	position: absolute;
-	left: 10px;
-	right: 10px;
 	top: 10px;
-	pointer-events: none;
+	right: 10px;
 	z-index: 5;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 10px;
+}
+
+.playing-labels {
+	text-align: right;
+	pointer-events: none;
 }
 
 .playing-labels .game-label {
 	color: #FFFFFF;
+}
+
+/*	The return button sits in the HUD flow here rather than the page corner. */
+.playing-hud .return-button {
+	position: static;
 }
 
 .person {
@@ -384,7 +416,7 @@ html, body {
 	position: absolute;
 	left: 0;
 	top: 120px;
-	width: 100%;
+	width: 600px;
 	z-index: 30;
 }
 
