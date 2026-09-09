@@ -450,28 +450,24 @@ export const PlayingState = {
 
 	drawPuzzle(): void {
 		const s = PlayingState;
-		const ctx = s.ctx!;
 
-		PuzzleRenderer.draw(
-			ctx, s.puzzleSize, s.puzzleTop, s.puzzleLeft,
-			s.blocks, s.structures, s.isSolved, s.structureVisible, s.puzzleScale,
-		);
-
-		//	The sliding block left the grid in startSlide(); draw it here at its
-		//	interpolated position on top of the settled board.
+		//	The sliding block left the grid in startSlide(); hand its interpolated
+		//	position to the renderer so it's drawn within its row's depth.
+		let slide: { gx: number; gy: number; type: number } | undefined;
 		if (s.slide) {
 			const p = easeOutCubic(Math.min(1, (performance.now() - s.slide.startedAt) / SLIDE_MS));
-			const gx = s.slide.fromX + (s.slide.toX - s.slide.fromX) * p;
-			const gy = s.slide.fromY + (s.slide.toY - s.slide.fromY) * p;
-			const img = Block.getBlockImage(s.slide.type);
-			ctx.drawImage(
-				img,
-				gx * (Block.BlockWidth * s.puzzleScale) + s.puzzleLeft,
-				gy * (Block.BlockHeight * s.puzzleScale) + s.puzzleTop,
-				img.width * s.puzzleScale,
-				img.height * s.puzzleScale,
-			);
+			slide = {
+				gx: s.slide.fromX + (s.slide.toX - s.slide.fromX) * p,
+				gy: s.slide.fromY + (s.slide.toY - s.slide.fromY) * p,
+				type: s.slide.type,
+			};
 		}
+
+		PuzzleRenderer.draw(
+			s.ctx!, s.puzzleSize, s.puzzleTop, s.puzzleLeft,
+			s.blocks, s.structures, s.isSolved, s.structureVisible, s.puzzleScale,
+			{ slide },
+		);
 	},
 
 	showLevelComplete(): void {

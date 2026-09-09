@@ -7,6 +7,9 @@ export interface PuzzleRenderOptions {
 	//	Editor's hover selector
 	selectedOffset?: number;
 	selectorRaised?: boolean;
+	//	A block sliding between cells, in (fractional) grid coordinates. Drawn
+	//	within its current row so nearer rows still overlap it.
+	slide?: { gx: number; gy: number; type: number };
 }
 
 export const PuzzleRenderer = {
@@ -63,6 +66,20 @@ export const PuzzleRenderer = {
 					ctx.drawImage(img, blockX, selY, img.width * scale, img.height * scale);
 					ctx.globalAlpha = 1.0;
 				}
+			}
+
+			//	Paint the sliding block once its row is reached, so tiles in
+			//	front (nearer rows) are still drawn over it.
+			const slide = options.slide;
+			if (slide && Math.round(slide.gy) === y) {
+				const img = Block.getBlockImage(slide.type);
+				ctx.drawImage(
+					img,
+					slide.gx * (Block.BlockWidth * scale) + puzzleLeft,
+					slide.gy * (Block.BlockHeight * scale) + puzzleTop,
+					img.width * scale,
+					img.height * scale,
+				);
 			}
 		}
 	},
