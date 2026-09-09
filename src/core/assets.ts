@@ -50,11 +50,8 @@ export const Assets = {
 		names.forEach((name) => {
 			const img = new Image();
 			Assets.images[name] = img;
+			img.onload = img.onerror = settle;
 			img.src = "assets/images/" + name + ".png";
-			//	Wait for decode(), not just load: a decoded-but-not-rasterised
-			//	image draws nothing the first time it hits ctx.drawImage() on a
-			//	fresh canvas, which left the puzzle blank until the first click.
-			img.decode().then(settle, settle);
 		});
 	},
 
@@ -78,7 +75,6 @@ export const Assets = {
 
 export const Sounds = {
 	play(name: string, volume?: number): void {
-		console.log(`Playing sound: ${name}`);
 		const audio = new Audio("assets/sounds/" + name + ".wav");
 		audio.volume = volume === undefined ? 1.0 : volume;
 		//	Browsers block audio before the first user interaction; ignore that

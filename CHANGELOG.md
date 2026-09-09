@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Blocks now slide into place with a quick animation; the board ignores clicks
+  while a block is moving.
+- Another fix for the puzzle board sometimes rendering blank until the first
+  click.
+
 ## 3.1.1 — 2026-09-08
 
 - Fixed the puzzle tiles sometimes not showing up until you clicked the board.

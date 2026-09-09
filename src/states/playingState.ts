@@ -14,6 +14,20 @@ interface Point {
 	y: number;
 }
 
+//	A block sliding into the empty slot. Grid coords; `type` is its block id.
+interface Slide {
+	fromX: number;
+	fromY: number;
+	toX: number;
+	toY: number;
+	type: number;
+	startedAt: number;
+}
+
+const SLIDE_MS = 200;
+
+const easeOutCubic = (t: number): number => 1 - Math.pow(1 - t, 3);
+
 export const PlayingState = {
 	root: null as HTMLDivElement | null,
 	canvas: null as HTMLCanvasElement | null,
@@ -37,6 +51,9 @@ export const PlayingState = {
 	structureClock: 0,
 	structureDelay: 0.2,
 	structureRevealList: [] as Point[],
+
+	//	Non-null while a block is sliding; blocks player input until it lands.
+	slide: null as Slide | null,
 
 	currentLevel: 0,
 	isCustomLevel: false,
@@ -65,6 +82,7 @@ export const PlayingState = {
 		PlayingState.movesMade = 0;
 		PlayingState.clock = 0;
 		PlayingState.completeOverlay = null;
+		PlayingState.slide = null;
 
 		const root = document.createElement("div");
 		root.className = "state playing-state";
@@ -192,10 +210,17 @@ export const PlayingState = {
 		canvas.addEventListener("click", PlayingState.click);
 
 		parent.appendChild(root);
-
-		//	Draw once the canvas is attached (assets are already decoded by the
-		//	loading screen, so a single draw here is enough).
 		PlayingState.drawPuzzle();
+
+		//	A fresh navigation can reach drawImage() before the browser has a
+		//	decoded bitmap for the tile images (it drops them for images that
+		//	aren't in the DOM), leaving the board blank until the first redraw.
+		//	Force a decode, then redraw while it's still guaranteed resident.
+		Promise.all(
+			Object.values(Assets.images).map((img) => img.decode().catch(() => {})),
+		).then(() => {
+			if (PlayingState.root === root) PlayingState.drawPuzzle();
+		});
 
 		PlayingState.lastTime = 0;
 		cancelAnimationFrame(PlayingState.animationFrame);
@@ -206,6 +231,7 @@ export const PlayingState = {
 	unmount(): void {
 		cancelAnimationFrame(PlayingState.animationFrame);
 		PlayingState.animationFrame = 0;
+		PlayingState.slide = null;
 		PlayingState.root?.remove();
 		PlayingState.root = null;
 		Particles.clear();
@@ -258,6 +284,7 @@ export const PlayingState = {
 		}
 	},
 
+	//	Instant swap, used by scramble(). Player moves go through startSlide().
 	swapBlock(blockX: number, blockY: number): void {
 		const s = PlayingState;
 		s.blocks[s.slotY * s.puzzleSize + s.slotX] = s.blocks[blockY * s.puzzleSize + blockX];
@@ -266,10 +293,40 @@ export const PlayingState = {
 		s.slotY = blockY;
 	},
 
+	//	Begin animating the block at (blockX, blockY) into the empty slot. The
+	//	block leaves the grid immediately (drawn at its tweened position instead)
+	//	and the move is finalised by finishSlide() once SLIDE_MS has elapsed.
+	startSlide(blockX: number, blockY: number): void {
+		const s = PlayingState;
+		const from = blockY * s.puzzleSize + blockX;
+		s.slide = {
+			fromX: blockX, fromY: blockY,
+			toX: s.slotX, toY: s.slotY,
+			type: s.blocks[from],
+			startedAt: performance.now(),
+		};
+		s.blocks[from] = -1;
+	},
+
+	//	Land an in-progress slide once its time is up (called every frame and
+	//	also on click, so a stalled animation frame can't wedge the board).
+	finishSlide(): void {
+		const s = PlayingState;
+		if (!s.slide || performance.now() - s.slide.startedAt < SLIDE_MS) return;
+
+		const move = s.slide;
+		s.slide = null;
+		s.blocks[move.toY * s.puzzleSize + move.toX] = move.type;
+		s.slotX = move.fromX;
+		s.slotY = move.fromY;
+		s.checkForGoal();
+	},
+
 	click(event: MouseEvent): void {
 		const s = PlayingState;
 
-		if (s.isSolved) return;
+		s.finishSlide();
+		if (s.isSolved || s.slide) return;
 
 		const rect = s.canvas!.getBoundingClientRect();
 		const offset = PuzzleRenderer.hitTest(
@@ -288,15 +345,12 @@ export const PlayingState = {
 			(s.slotY === blockY - 1 && s.slotX === blockX) ||
 			(s.slotY === blockY + 1 && s.slotX === blockX);
 
-		if (adjacent) {
-			s.swapBlock(blockX, blockY);
-			s.movesMade++;
-			Sounds.PlayMove();
-		}
+		if (!adjacent) return;
 
+		s.startSlide(blockX, blockY);
+		s.movesMade++;
 		s.movesLabel!.textContent = "Moves: " + s.movesMade;
-		s.drawPuzzle();
-		s.checkForGoal();
+		Sounds.PlayMove();
 	},
 
 	checkForGoal(): boolean {
@@ -347,6 +401,13 @@ export const PlayingState = {
 		s.lastTime = time;
 		if (dt > 0.1) dt = 0.1;
 
+		s.finishSlide();
+
+		//	Redraw every frame: it animates the sliding block, and it also
+		//	recovers the board if the initial draw landed before a tile image
+		//	was ready to paint into the canvas.
+		s.drawPuzzle();
+
 		if (!s.isSolved) {
 			s.clock += dt;
 			const minutes = Math.floor(s.clock / 60);
@@ -389,10 +450,28 @@ export const PlayingState = {
 
 	drawPuzzle(): void {
 		const s = PlayingState;
+		const ctx = s.ctx!;
+
 		PuzzleRenderer.draw(
-			s.ctx!, s.puzzleSize, s.puzzleTop, s.puzzleLeft,
+			ctx, s.puzzleSize, s.puzzleTop, s.puzzleLeft,
 			s.blocks, s.structures, s.isSolved, s.structureVisible, s.puzzleScale,
 		);
+
+		//	The sliding block left the grid in startSlide(); draw it here at its
+		//	interpolated position on top of the settled board.
+		if (s.slide) {
+			const p = easeOutCubic(Math.min(1, (performance.now() - s.slide.startedAt) / SLIDE_MS));
+			const gx = s.slide.fromX + (s.slide.toX - s.slide.fromX) * p;
+			const gy = s.slide.fromY + (s.slide.toY - s.slide.fromY) * p;
+			const img = Block.getBlockImage(s.slide.type);
+			ctx.drawImage(
+				img,
+				gx * (Block.BlockWidth * s.puzzleScale) + s.puzzleLeft,
+				gy * (Block.BlockHeight * s.puzzleScale) + s.puzzleTop,
+				img.width * s.puzzleScale,
+				img.height * s.puzzleScale,
+			);
+		}
 	},
 
 	showLevelComplete(): void {
