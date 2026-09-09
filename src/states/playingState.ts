@@ -145,12 +145,12 @@ export const PlayingState = {
 
 		field.appendChild(bubble);
 
-		//	Return button (stacked under the stats in the top-right HUD)
+		//	Return button (bottom-left of the page, via the shared .return-button rule)
 		PlayingState.returnButton = UI.hoverButton("Button_Return_Off", "Button_Return_Over", () => {
 			Game.showTitle();
 		});
 		PlayingState.returnButton.className += " return-button";
-		hud.appendChild(PlayingState.returnButton);
+		root.appendChild(PlayingState.returnButton);
 
 		//	Remove the bottom-right block to create the empty slot
 		const size = PlayingState.puzzleSize;
