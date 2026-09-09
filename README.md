@@ -37,6 +37,37 @@ src/
 Deploys as a static site (default Cloudflare Pages / Worker pipeline); `base` is
 `/` and assets are referenced with root-relative URLs.
 
+## Cloud background
+
+The page background (`src/background/CloudBackground.tsx`) is a full-viewport
+canvas. Each frame it fills a small low-resolution buffer with fractal noise
+(`src/background/noise.ts`), maps that through a blue→white ramp, and upscales
+it with smoothing — the blur is what makes it read as soft clouds. Hidden tabs
+pause the animation and `prefers-reduced-motion` renders a single static frame.
+
+Tuning constants at the top of `CloudBackground.tsx`:
+
+| Constant | Effect |
+| --- | --- |
+| `BASE_R` / `BASE_G` / `BASE_B` | The sky colour shown between clouds (the cloud colour is always white). Keep it in sync with the `#8ccde9` fallback on `html, body` in `src/style.css`. |
+| `LOW_EDGE` | Noise below this is clear sky. Lower it for more cloud coverage (~0.40 is noticeably cloudier). |
+| `HIGH_EDGE` | Noise above this is solid white. The gap between `LOW_EDGE` and `HIGH_EDGE` is the softness of the cloud edges — widen it for wispier clouds, narrow it for more defined ones. |
+| `DRIFT_X` / `DRIFT_Y` | How fast the cloud field scrolls across the screen, in noise units per second. |
+| `EVOLVE` | How fast cloud shapes morph over time (the third, animated noise axis). `0` makes clouds only slide without changing shape; larger values billow faster. |
+| `CLOUD_SPAN` | How much noise space the long screen edge covers. Larger → more, smaller cloud masses; smaller → fewer, bigger ones. |
+| `TARGET_FPS` | Redraw cap. Lowering it cuts CPU use at the cost of smoothness. |
+
+Two more knobs, both a detail-vs-CPU trade-off (fractal noise is evaluated once
+per buffer pixel per frame):
+
+- The buffer resolution — the `step` divisor and the `220 × 150` cap in
+  `resize()`. Larger buffer = finer clouds, more cost.
+- The `octaves` argument to `noise.fbm()` (default `3`) — more octaves add finer
+  wisps.
+
+The noise seed passed to `new ValueNoise3D(...)` picks which cloud pattern you
+get; change it for a different-looking sky.
+
 ## Changes from the Flash version
 
 - **Save data** uses `localStorage` instead of a Flash SharedObject.
