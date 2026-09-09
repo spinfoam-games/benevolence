@@ -22,3 +22,11 @@ dist/
 build/
 *.log
 npm-debug.log*
+
+# Vite
+.vite/
+*.local
+dist-ssr/
+
+# scratch / local logs
+scratch_*

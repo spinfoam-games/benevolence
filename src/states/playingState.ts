@@ -1,19 +1,33 @@
 //	The main puzzle-playing screen (PlayingState.as, LevelCompleteOverlay.as,
 //	Pattern.as, People.as)
-var PlayingState = {
-	root: null,
-	canvas: null,
-	ctx: null,
+import { Assets, Sounds } from "../core/assets.ts";
+import { Block } from "../core/blocks.ts";
+import { Levels, isRawLevel, type ParsedLevel } from "../core/levels.ts";
+import { Particles } from "../core/particles.ts";
+import { UI } from "../ui/widgets.ts";
+import { PuzzleRenderer } from "../render/puzzleRenderer.ts";
+import { Storage } from "../core/storage.ts";
+import { Game } from "../game.ts";
+
+interface Point {
+	x: number;
+	y: number;
+}
+
+export const PlayingState = {
+	root: null as HTMLDivElement | null,
+	canvas: null as HTMLCanvasElement | null,
+	ctx: null as CanvasRenderingContext2D | null,
 
 	puzzleSize: 4,
 	puzzleScale: 1.0,
 	puzzleTop: 50,
 	puzzleLeft: 50,
 
-	blocks: null,
-	structures: null,
-	structureVisible: null,
-	goal: null,
+	blocks: [] as number[],
+	structures: [[], []] as number[][],
+	structureVisible: [] as Array<number | undefined>,
+	goal: [] as number[],
 	emptySlotType: 0,
 	slotX: 0,
 	slotY: 0,
@@ -22,25 +36,25 @@ var PlayingState = {
 	structureAppearing: false,
 	structureClock: 0,
 	structureDelay: 0.2,
-	structureRevealList: null,
+	structureRevealList: [] as Point[],
 
 	currentLevel: 0,
 	isCustomLevel: false,
 	movesMade: 0,
 	clock: 0,
 
-	movesLabel: null,
-	timeLabel: null,
-	patternCanvas: null,
-	heartEl: null,
-	returnButton: null,
-	completeOverlay: null,
+	movesLabel: null as HTMLDivElement | null,
+	timeLabel: null as HTMLDivElement | null,
+	patternCanvas: null as HTMLCanvasElement | null,
+	heartEl: null as HTMLImageElement | null,
+	returnButton: null as HTMLDivElement | null,
+	completeOverlay: null as HTMLDivElement | null,
 	completeAlpha: 0,
 
 	animationFrame: 0,
 	lastTime: 0,
 
-	show: function (levelNumber, customLevel) {
+	show(levelNumber: number, customLevel: boolean): void {
 		PlayingState.currentLevel = levelNumber;
 		PlayingState.isCustomLevel = customLevel;
 		PlayingState.isSolved = false;
@@ -50,41 +64,41 @@ var PlayingState = {
 		PlayingState.clock = 0;
 		PlayingState.completeOverlay = null;
 
-		var root = document.createElement('div');
-		root.className = 'state playing-state';
+		const root = document.createElement("div");
+		root.className = "state playing-state";
 		PlayingState.root = root;
 
 		//	Puzzle canvas
-		var canvas = document.createElement('canvas');
+		const canvas = document.createElement("canvas");
 		canvas.width = 600;
 		canvas.height = 600;
-		canvas.className = 'puzzle-canvas';
+		canvas.className = "puzzle-canvas";
 		root.appendChild(canvas);
 		PlayingState.canvas = canvas;
-		PlayingState.ctx = canvas.getContext('2d');
+		PlayingState.ctx = canvas.getContext("2d");
 
 		//	Labels (top right)
-		var labels = document.createElement('div');
-		labels.className = 'playing-labels';
+		const labels = document.createElement("div");
+		labels.className = "playing-labels";
 
-		var levelLabel = UI.label('right', 24);
+		const levelLabel = UI.label("right", 24);
 
 		//	Level data
-		var levelData;
+		let levelData: ParsedLevel;
 		if (customLevel) {
-			var custom = Game.customLevelList[levelNumber];
+			const custom = Game.customLevelList[levelNumber];
 			levelData = Levels.ParseData(custom.data);
-			levelLabel.textContent = custom.name + ' by ' + custom.author;
+			levelLabel.textContent = custom.name + " by " + custom.author;
 		} else {
-			levelData = Levels.LevelData[levelNumber];
-			if (levelData.data) levelData = Levels.ParseData(levelData.data);
-			levelLabel.textContent = 'Level ' + (levelNumber + 1);
+			const entry = Levels.LevelData[levelNumber];
+			levelData = isRawLevel(entry) ? Levels.ParseData(entry.data) : entry;
+			levelLabel.textContent = "Level " + (levelNumber + 1);
 		}
 
-		PlayingState.movesLabel = UI.label('right', 24);
-		PlayingState.movesLabel.textContent = 'Moves: 0';
-		PlayingState.timeLabel = UI.label('right', 24);
-		PlayingState.timeLabel.textContent = 'Time: 0:00';
+		PlayingState.movesLabel = UI.label("right", 24);
+		PlayingState.movesLabel.textContent = "Moves: 0";
+		PlayingState.timeLabel = UI.label("right", 24);
+		PlayingState.timeLabel.textContent = "Time: 0:00";
 
 		labels.appendChild(levelLabel);
 		labels.appendChild(PlayingState.movesLabel);
@@ -97,36 +111,36 @@ var PlayingState = {
 		PlayingState.structureVisible = [];
 
 		//	Person and speech bubble with the goal pattern
-		var person = document.createElement('div');
-		person.className = 'person';
-		var personImg = Assets.images[Assets.PEOPLE[Math.floor(Math.random() * Assets.PEOPLE.length)]].cloneNode();
+		const person = document.createElement("div");
+		person.className = "person";
+		const personImg = Assets.cloneImage(Assets.PEOPLE[Math.floor(Math.random() * Assets.PEOPLE.length)]);
 		person.appendChild(personImg);
 		root.appendChild(person);
 
-		var bubble = document.createElement('div');
-		bubble.className = 'speech-bubble';
-		bubble.appendChild(Assets.images['SpeechBubble'].cloneNode());
+		const bubble = document.createElement("div");
+		bubble.className = "speech-bubble";
+		bubble.appendChild(Assets.cloneImage("SpeechBubble"));
 
-		PlayingState.patternCanvas = document.createElement('canvas');
-		PlayingState.patternCanvas.className = 'pattern-canvas';
+		PlayingState.patternCanvas = document.createElement("canvas");
+		PlayingState.patternCanvas.className = "pattern-canvas";
 		bubble.appendChild(PlayingState.patternCanvas);
 
-		PlayingState.heartEl = Assets.images['Heart'].cloneNode();
-		PlayingState.heartEl.className = 'bubble-heart';
-		PlayingState.heartEl.style.display = 'none';
+		PlayingState.heartEl = Assets.cloneImage("Heart");
+		PlayingState.heartEl.className = "bubble-heart";
+		PlayingState.heartEl.style.display = "none";
 		bubble.appendChild(PlayingState.heartEl);
 
 		root.appendChild(bubble);
 
 		//	Return button
-		PlayingState.returnButton = UI.hoverButton('Button_Return_Off', 'Button_Return_Over', function () {
+		PlayingState.returnButton = UI.hoverButton("Button_Return_Off", "Button_Return_Over", () => {
 			Game.showTitle();
 		});
-		PlayingState.returnButton.className += ' return-button';
+		PlayingState.returnButton.className += " return-button";
 		root.appendChild(PlayingState.returnButton);
 
 		//	Remove the bottom-right block to create the empty slot
-		var size = PlayingState.puzzleSize;
+		const size = PlayingState.puzzleSize;
 		PlayingState.emptySlotType = PlayingState.blocks[size * size - 1];
 		PlayingState.blocks[size * size - 1] = -1;
 		PlayingState.slotX = size - 1;
@@ -139,19 +153,19 @@ var PlayingState = {
 		PlayingState.drawPattern();
 
 		//	Build the shuffled structure-reveal list
-		var pointList = [];
-		for (var y = 0; y < size; y++) {
-			for (var x = 0; x < size; x++) {
-				var offset = y * size + x;
+		const pointList: Point[] = [];
+		for (let y = 0; y < size; y++) {
+			for (let x = 0; x < size; x++) {
+				const offset = y * size + x;
 				if (PlayingState.structures[0][offset] > 0 || PlayingState.structures[1][offset] > 0) {
-					pointList.push({ x: x, y: y });
+					pointList.push({ x, y });
 				}
 			}
 		}
 
 		PlayingState.structureRevealList = [];
 		while (pointList.length > 0) {
-			var which = Math.floor(Math.random() * pointList.length);
+			const which = Math.floor(Math.random() * pointList.length);
 			PlayingState.structureRevealList.push(pointList[which]);
 			pointList.splice(which, 1);
 		}
@@ -163,7 +177,7 @@ var PlayingState = {
 		PlayingState.scramble(2000);
 		PlayingState.drawPuzzle();
 
-		canvas.addEventListener('click', PlayingState.click);
+		canvas.addEventListener("click", PlayingState.click);
 
 		Game.setState(root);
 
@@ -172,19 +186,19 @@ var PlayingState = {
 		PlayingState.animationFrame = requestAnimationFrame(PlayingState.update);
 	},
 
-	drawPattern: function () {
-		var size = PlayingState.puzzleSize;
-		var blockSize = 10;
-		var spacing = 2;
+	drawPattern(): void {
+		const size = PlayingState.puzzleSize;
+		const blockSize = 10;
+		const spacing = 2;
 
-		var canvas = PlayingState.patternCanvas;
+		const canvas = PlayingState.patternCanvas!;
 		canvas.width = size * (blockSize + spacing);
 		canvas.height = size * (blockSize + spacing);
 
-		var ctx = canvas.getContext('2d');
+		const ctx = canvas.getContext("2d")!;
 
-		for (var y = 0; y < size; y++) {
-			for (var x = 0; x < size; x++) {
+		for (let y = 0; y < size; y++) {
+			for (let x = 0; x < size; x++) {
 				//	The blank space is drawn as blank in the pattern,
 				//	since it was confusing people
 				if (x === size - 1 && y === size - 1) continue;
@@ -195,11 +209,11 @@ var PlayingState = {
 		}
 	},
 
-	scramble: function (steps) {
-		var s = PlayingState;
+	scramble(steps: number): void {
+		const s = PlayingState;
 
-		for (var count = 0; count < steps; count++) {
-			var done = false;
+		for (let count = 0; count < steps; count++) {
+			let done = false;
 
 			while (!done) {
 				if (s.slotX > 0 && Math.random() < 0.33) {
@@ -219,31 +233,31 @@ var PlayingState = {
 		}
 	},
 
-	swapBlock: function (blockX, blockY) {
-		var s = PlayingState;
+	swapBlock(blockX: number, blockY: number): void {
+		const s = PlayingState;
 		s.blocks[s.slotY * s.puzzleSize + s.slotX] = s.blocks[blockY * s.puzzleSize + blockX];
 		s.blocks[blockY * s.puzzleSize + blockX] = -1;
 		s.slotX = blockX;
 		s.slotY = blockY;
 	},
 
-	click: function (event) {
-		var s = PlayingState;
+	click(event: MouseEvent): void {
+		const s = PlayingState;
 
 		if (s.isSolved) return;
 
-		var rect = s.canvas.getBoundingClientRect();
-		var offset = PuzzleRenderer.hitTest(
+		const rect = s.canvas!.getBoundingClientRect();
+		const offset = PuzzleRenderer.hitTest(
 			event.clientX - rect.left, event.clientY - rect.top,
-			s.puzzleSize, s.puzzleTop, s.puzzleLeft, s.puzzleScale
+			s.puzzleSize, s.puzzleTop, s.puzzleLeft, s.puzzleScale,
 		);
 
 		if (offset < 0) return;
 
-		var blockX = offset % s.puzzleSize;
-		var blockY = Math.floor(offset / s.puzzleSize);
+		const blockX = offset % s.puzzleSize;
+		const blockY = Math.floor(offset / s.puzzleSize);
 
-		var adjacent =
+		const adjacent =
 			(s.slotX === blockX + 1 && s.slotY === blockY) ||
 			(s.slotX === blockX - 1 && s.slotY === blockY) ||
 			(s.slotY === blockY - 1 && s.slotX === blockX) ||
@@ -255,23 +269,23 @@ var PlayingState = {
 			Sounds.PlayMove();
 		}
 
-		s.movesLabel.textContent = 'Moves: ' + s.movesMade;
+		s.movesLabel!.textContent = "Moves: " + s.movesMade;
 		s.drawPuzzle();
 		s.checkForGoal();
 	},
 
-	checkForGoal: function () {
-		var s = PlayingState;
-		var size = s.puzzleSize;
+	checkForGoal(): boolean {
+		const s = PlayingState;
+		const size = s.puzzleSize;
 
-		for (var i = 0; i < size * size; i++) {
+		for (let i = 0; i < size * size; i++) {
 			if (s.goal[i] !== s.blocks[i]) return false;
 		}
 
 		//	Solved!
 		s.isSolved = true;
-		s.patternCanvas.style.display = 'none';
-		s.heartEl.style.display = 'block';
+		s.patternCanvas!.style.display = "none";
+		s.heartEl!.style.display = "block";
 
 		//	Stars around the person / speech bubble
 		Particles.spawn(510, 480, 10);
@@ -284,7 +298,7 @@ var PlayingState = {
 		//	Store best time / fewest moves (custom levels aren't tracked,
 		//	matching the original)
 		if (!s.isCustomLevel) {
-			var data = Game.levelCompletionData[s.currentLevel];
+			const data = Game.levelCompletionData[s.currentLevel];
 			if (!data) {
 				Game.levelCompletionData[s.currentLevel] = { BestTime: s.clock, FewestMoves: s.movesMade };
 			} else {
@@ -300,38 +314,38 @@ var PlayingState = {
 		return true;
 	},
 
-	update: function (time) {
-		var s = PlayingState;
+	update(time: number): void {
+		const s = PlayingState;
 		if (!s.root || !s.root.parentNode) return;
 
-		var dt = s.lastTime ? (time - s.lastTime) / 1000 : 0;
+		let dt = s.lastTime ? (time - s.lastTime) / 1000 : 0;
 		s.lastTime = time;
 		if (dt > 0.1) dt = 0.1;
 
 		if (!s.isSolved) {
 			s.clock += dt;
-			var minutes = Math.floor(s.clock / 60);
-			var seconds = Math.floor(s.clock - minutes * 60);
-			s.timeLabel.textContent = 'Time: ' + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+			const minutes = Math.floor(s.clock / 60);
+			const seconds = Math.floor(s.clock - minutes * 60);
+			s.timeLabel!.textContent = "Time: " + minutes + ":" + (seconds < 10 ? "0" : "") + seconds;
 		} else if (s.completeOverlay) {
 			//	Fade the overlay in over ~2 seconds while the return button fades out
 			s.completeAlpha = Math.min(1, s.completeAlpha + dt / 2);
-			s.completeOverlay.style.opacity = s.completeAlpha;
-			s.returnButton.style.opacity = 1 - s.completeAlpha;
+			s.completeOverlay.style.opacity = String(s.completeAlpha);
+			s.returnButton!.style.opacity = String(1 - s.completeAlpha);
 		}
 
 		if (s.structureAppearing) {
 			s.structureClock += dt;
 
 			if (s.structureClock >= s.structureDelay && s.structureRevealList.length > 0) {
-				var point = s.structureRevealList.shift();
+				const point = s.structureRevealList.shift()!;
 				s.structureVisible[point.y * s.puzzleSize + point.x] = 1;
 				s.structureClock = 0;
 
 				Particles.spawn(
 					point.x * Block.ImageWidth * s.puzzleScale + s.puzzleLeft,
 					point.y * Block.BlockHeight * s.puzzleScale + s.puzzleTop,
-					10
+					10,
 				);
 
 				Sounds.PlaySmallSuccess();
@@ -348,41 +362,41 @@ var PlayingState = {
 		s.animationFrame = requestAnimationFrame(s.update);
 	},
 
-	drawPuzzle: function () {
-		var s = PlayingState;
+	drawPuzzle(): void {
+		const s = PlayingState;
 		PuzzleRenderer.draw(
-			s.ctx, s.puzzleSize, s.puzzleTop, s.puzzleLeft,
-			s.blocks, s.structures, s.isSolved, s.structureVisible, s.puzzleScale
+			s.ctx!, s.puzzleSize, s.puzzleTop, s.puzzleLeft,
+			s.blocks, s.structures, s.isSolved, s.structureVisible, s.puzzleScale,
 		);
 	},
 
-	showLevelComplete: function () {
-		var s = PlayingState;
+	showLevelComplete(): void {
+		const s = PlayingState;
 
-		var overlay = document.createElement('div');
-		overlay.className = 'level-complete-overlay';
-		overlay.style.opacity = 0;
+		const overlay = document.createElement("div");
+		overlay.className = "level-complete-overlay";
+		overlay.style.opacity = "0";
 		s.completeAlpha = 0;
 		s.completeOverlay = overlay;
 
-		var message = Assets.images['LevelComplete'].cloneNode();
-		message.className = 'complete-message';
+		const message = Assets.cloneImage("LevelComplete");
+		message.className = "complete-message";
 		overlay.appendChild(message);
 
-		var buttons = document.createElement('div');
-		buttons.className = 'complete-buttons';
+		const buttons = document.createElement("div");
+		buttons.className = "complete-buttons";
 
-		var returnButton = UI.hoverButton('Button_Return_Off', 'Button_Return_Over', function () {
+		const returnButton = UI.hoverButton("Button_Return_Off", "Button_Return_Over", () => {
 			Game.showTitle();
 		});
 
-		var nextButton;
+		let nextButton: HTMLDivElement;
 		if (s.isCustomLevel) {
-			nextButton = UI.hoverButton('Button_CustomLevels_Off', 'Button_CustomLevels_On', function () {
+			nextButton = UI.hoverButton("Button_CustomLevels_Off", "Button_CustomLevels_On", () => {
 				Game.showCustomLevelSelection();
 			});
 		} else {
-			nextButton = UI.hoverButton('Button_Next_Off', 'Button_Next_Over', function () {
+			nextButton = UI.hoverButton("Button_Next_Off", "Button_Next_Over", () => {
 				Game.startLevel((s.currentLevel + 1) % Levels.LevelData.length, false);
 			});
 		}
@@ -391,6 +405,6 @@ var PlayingState = {
 		buttons.appendChild(nextButton);
 		overlay.appendChild(buttons);
 
-		s.root.appendChild(overlay);
-	}
+		s.root!.appendChild(overlay);
+	},
 };

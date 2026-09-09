@@ -2,18 +2,18 @@
 
 @font-face {
 	font-family: 'Sniglet';
-	src: url('../assets/fonts/Sniglet-Regular.ttf');
+	src: url('/assets/fonts/Sniglet-Regular.ttf');
 }
 
 @font-face {
 	font-family: 'Golos Text';
-	src: url('../assets/fonts/GolosText-Regular.ttf');
+	src: url('/assets/fonts/GolosText-Regular.ttf');
 	font-weight: normal;
 }
 
 @font-face {
 	font-family: 'Golos Text';
-	src: url('../assets/fonts/GolosText-Bold.ttf');
+	src: url('/assets/fonts/GolosText-Bold.ttf');
 	font-weight: bold;
 }
 
@@ -33,7 +33,7 @@ html, body {
 	width: 600px;
 	height: 600px;
 	overflow: hidden;
-	background: url('../assets/images/Background.png');
+	background: url('/assets/images/Background.png');
 	user-select: none;
 	font-family: 'Sniglet', sans-serif;
 }

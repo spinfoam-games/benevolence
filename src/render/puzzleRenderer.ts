@@ -1,24 +1,41 @@
 //	Shared isometric puzzle renderer (the drawPuzzle logic from
 //	PlayingState.as / EditorState.as)
-var PuzzleRenderer = {
-	//	options: { selectedOffset, selectorRaised } for the editor's hover selector
-	draw: function (ctx, puzzleSize, puzzleTop, puzzleLeft, blocks, structures, drawStructures, structureVisible, scale, options) {
-		options = options || {};
+import { Block } from "../core/blocks.ts";
+import { Assets } from "../core/assets.ts";
 
+export interface PuzzleRenderOptions {
+	//	Editor's hover selector
+	selectedOffset?: number;
+	selectorRaised?: boolean;
+}
+
+export const PuzzleRenderer = {
+	draw(
+		ctx: CanvasRenderingContext2D,
+		puzzleSize: number,
+		puzzleTop: number,
+		puzzleLeft: number,
+		blocks: number[],
+		structures: number[][],
+		drawStructures: boolean,
+		structureVisible: Array<number | undefined>,
+		scale: number,
+		options: PuzzleRenderOptions = {},
+	): void {
 		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-		for (var y = 0; y < puzzleSize; y++) {
-			var blockY = y * (Block.BlockHeight * scale) + puzzleTop;
+		for (let y = 0; y < puzzleSize; y++) {
+			const blockY = y * (Block.BlockHeight * scale) + puzzleTop;
 
-			for (var x = 0; x < puzzleSize; x++) {
-				var blockX = x * (Block.BlockWidth * scale) + puzzleLeft;
-				var offset = y * puzzleSize + x;
-				var type = blocks[offset];
+			for (let x = 0; x < puzzleSize; x++) {
+				const blockX = x * (Block.BlockWidth * scale) + puzzleLeft;
+				const offset = y * puzzleSize + x;
+				const type = blocks[offset];
 
 				//	Don't draw the empty slot
 				if (type === -1) continue;
 
-				var img = Block.getBlockImage(type);
+				let img = Block.getBlockImage(type);
 				ctx.drawImage(img, blockX, blockY, img.width * scale, img.height * scale);
 
 				if (drawStructures && structureVisible[offset]) {
@@ -37,11 +54,11 @@ var PuzzleRenderer = {
 
 				//	Editor hover selector
 				if (offset === options.selectedOffset) {
-					var selY = (options.selectorRaised && structures[0][offset] > 0)
+					const selY = (options.selectorRaised && structures[0][offset] > 0)
 						? blockY - (Block.BlockTopHeight + Block.BlockRoofHeight) * scale
 						: blockY - Block.BlockTopHeight * scale;
 
-					img = Assets.images['Selector'];
+					img = Assets.image("Selector");
 					ctx.globalAlpha = 0.5;
 					ctx.drawImage(img, blockX, selY, img.width * scale, img.height * scale);
 					ctx.globalAlpha = 1.0;
@@ -52,16 +69,23 @@ var PuzzleRenderer = {
 
 	//	Translate a mouse position (relative to the game area) into a block
 	//	offset, or -1 when off the puzzle. Ported from findBlockOffset.
-	hitTest: function (x, y, puzzleSize, puzzleTop, puzzleLeft, scale) {
-		var skipY = 51 * scale;
+	hitTest(
+		x: number,
+		y: number,
+		puzzleSize: number,
+		puzzleTop: number,
+		puzzleLeft: number,
+		scale: number,
+	): number {
+		const skipY = 51 * scale;
 
-		var blockX = Math.floor((x - puzzleLeft) / (Block.BlockTopWidth * scale));
-		var blockY = Math.floor((y - puzzleTop - skipY) / (Block.BlockHeight * scale));
+		const blockX = Math.floor((x - puzzleLeft) / (Block.BlockTopWidth * scale));
+		const blockY = Math.floor((y - puzzleTop - skipY) / (Block.BlockHeight * scale));
 
 		if (blockX < 0 || blockX > puzzleSize - 1 || blockY < 0 || blockY > puzzleSize - 1) {
 			return -1;
 		}
 
 		return blockY * puzzleSize + blockX;
-	}
+	},
 };
