@@ -7,7 +7,7 @@ export const Assets = {
 
 	//	Every image the game uses, by base name (without ".png")
 	IMAGE_NAMES: [
-		"Background", "Title", "Heart", "SpeechBubble", "Star", "Selector",
+		"Title", "Heart", "SpeechBubble", "Star", "Selector",
 		"LevelComplete", "GameComplete", "WasabiLogo",
 		"Title_StandardLevels", "Title_CustomLevels",
 		"Label_3x3", "Label_4x4", "Label_5x5", "Label_6x6",

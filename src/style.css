@@ -20,19 +20,32 @@
 html, body {
 	margin: 0;
 	padding: 0;
-	background: #333333;
+	/*	Fallback sky colour shown before the cloud canvas paints. */
+	background: #8ccde9;
 }
 
-/*	The game fills the page; the background image tiles across the whole
-	viewport. Individual screens anchor their content to the top-left. */
+/*	The game fills the page; the animated cloud canvas (.cloud-bg) sits behind
+	everything. Individual screens anchor their content to the top-left. */
 #game {
 	position: relative;
 	width: 100%;
 	min-height: 100vh;
 	overflow: hidden;
-	background: url('/assets/images/Background.png') repeat;
 	user-select: none;
 	font-family: 'Sniglet', sans-serif;
+}
+
+/*	Animated cloud background: a fixed, full-viewport canvas behind the game.
+	It sits at z-index 0 and every screen is lifted above it (below), rather
+	than using a negative z-index which the page background would cover. */
+.cloud-bg {
+	position: fixed;
+	inset: 0;
+	width: 100vw;
+	height: 100vh;
+	z-index: 0;
+	pointer-events: none;
+	display: block;
 }
 
 /*	Fixed-size region, centered on the page, that holds the puzzle, character
@@ -49,12 +62,14 @@ html, body {
 #loading {
 	position: absolute;
 	inset: 0;
+	z-index: 1;
 	display: flex;
 	justify-content: center;
 	align-items: center;
 	color: #FFFFFF;
 	font-size: 24px;
 	font-family: sans-serif;
+	text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
 }
 
 /*	Kept aligned with .play-field so solve-particles land on the puzzle. */
@@ -76,6 +91,7 @@ html, body {
 .state {
 	position: absolute;
 	inset: 0;
+	z-index: 1;
 }
 
 /*	The title and editor screens are still designed around the original

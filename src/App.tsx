@@ -2,10 +2,11 @@
 //	renders the matching component. Title and its overlays are React; the
 //	canvas-heavy playing/editor screens are mounted by bridge components.
 import { useEffect } from "react";
-import { useGameStore } from "./store.ts";
+import { useGameStore, type Screen } from "./store.ts";
 import { Assets } from "./core/assets.ts";
 import { Particles } from "./core/particles.ts";
 import { Game } from "./game.ts";
+import { CloudBackground } from "./background/CloudBackground.tsx";
 import { TitleScreen } from "./ui/react/TitleScreen.tsx";
 import { PlayingScreen } from "./states/PlayingScreen.tsx";
 import { EditorScreen } from "./states/EditorScreen.tsx";
@@ -40,6 +41,15 @@ export function App() {
 		Particles.clear();
 	}, [screen]);
 
+	return (
+		<>
+			<CloudBackground />
+			{renderScreen(screen)}
+		</>
+	);
+}
+
+function renderScreen(screen: Screen) {
 	switch (screen) {
 		case "loading":
 			return <div id="loading">Loading...</div>;
