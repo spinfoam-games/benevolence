@@ -54,7 +54,9 @@ export const PlayingState = {
 	animationFrame: 0,
 	lastTime: 0,
 
-	show(levelNumber: number, customLevel: boolean): void {
+	//	Build the screen and attach it to `parent`. Call unmount() to tear down.
+	mount(parent: HTMLElement, levelNumber: number, customLevel: boolean): void {
+		Particles.clear();
 		PlayingState.currentLevel = levelNumber;
 		PlayingState.isCustomLevel = customLevel;
 		PlayingState.isSolved = false;
@@ -179,11 +181,20 @@ export const PlayingState = {
 
 		canvas.addEventListener("click", PlayingState.click);
 
-		Game.setState(root);
+		parent.appendChild(root);
 
 		PlayingState.lastTime = 0;
 		cancelAnimationFrame(PlayingState.animationFrame);
 		PlayingState.animationFrame = requestAnimationFrame(PlayingState.update);
+	},
+
+	//	Tear down: stop the animation loop and detach the screen
+	unmount(): void {
+		cancelAnimationFrame(PlayingState.animationFrame);
+		PlayingState.animationFrame = 0;
+		PlayingState.root?.remove();
+		PlayingState.root = null;
+		Particles.clear();
 	},
 
 	drawPattern(): void {

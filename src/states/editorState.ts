@@ -36,7 +36,8 @@ export const EditorState = {
 	nameField: null as HTMLInputElement | null,
 	overlayEl: null as HTMLDivElement | null,
 
-	show(): void {
+	//	Build the editor and attach it to `parent`. Call unmount() to tear down.
+	mount(parent: HTMLElement): void {
 		EditorState.mode = MODE_TILES;
 		EditorState.showStructures = false;
 		EditorState.selectedBlockOffset = -1;
@@ -113,13 +114,15 @@ export const EditorState = {
 		canvas.addEventListener("mousemove", EditorState.mouseMove);
 		document.addEventListener("keydown", EditorState.keyDown);
 
-		Game.setState(root);
+		parent.appendChild(root);
 		EditorState.drawPuzzle();
 	},
 
-	//	Called by Game when leaving this state
-	shutdown(): void {
+	//	Tear down: detach global listeners and the screen itself
+	unmount(): void {
 		document.removeEventListener("keydown", EditorState.keyDown);
+		EditorState.root?.remove();
+		EditorState.root = null;
 	},
 
 	createNewPuzzle(size: number): void {

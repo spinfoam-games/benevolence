@@ -57,6 +57,12 @@ html, body {
 	z-index: 100;
 }
 
+/*	React mounts screens inside #root; the host wrappers must not affect
+	layout so the absolutely-positioned .state fills #game. */
+#root, .screen-host {
+	display: contents;
+}
+
 .state {
 	position: absolute;
 	inset: 0;

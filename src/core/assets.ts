@@ -65,6 +65,11 @@ export const Assets = {
 	cloneImage(name: string): HTMLImageElement {
 		return Assets.image(name).cloneNode() as HTMLImageElement;
 	},
+
+	//	URL for an image, for use as an <img src> in React
+	imageSrc(name: string): string {
+		return "assets/images/" + name + ".png";
+	},
 };
 
 export const Sounds = {
