@@ -24,6 +24,23 @@ html, body {
 	background: #8ccde9;
 }
 
+/*	Neutralise Mantine's global baseline (@mantine/core/styles.css) for the
+	game's own markup, which predates it and expects browser defaults. Mantine
+	components still get the baseline; the game tree does not. */
+body {
+	color: #000000;
+	font-size: 16px;
+	line-height: normal;
+}
+
+/*	Zero-specificity so any explicit `box-sizing` (e.g. .wasabi-button) still
+	wins, but Mantine's global `* { box-sizing: border-box }` does not. */
+:where(#game) *,
+:where(#game) *::before,
+:where(#game) *::after {
+	box-sizing: content-box;
+}
+
 /*	The game fills the page; the animated cloud canvas (.cloud-bg) sits behind
 	everything. Individual screens anchor their content to the top-left. */
 #game {

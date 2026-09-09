@@ -7,8 +7,8 @@
 - The game now fills your whole browser window. The puzzle, character, and
   speech bubble stay centred, the level / moves / time readout sits in the
   top-right corner, and the Return to Title button is in the bottom-left.
-- Rebuilt on a modern toolchain (Bun, Vite, TypeScript, React) so future
-  updates land faster and more reliably.
+- Rebuilt on a modern toolchain (Bun, Vite, TypeScript, React, Mantine) so
+  future updates land faster and more reliably.
 
 ## 3.0.0
 
