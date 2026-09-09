@@ -42,15 +42,19 @@ export const Assets = {
 		for (let i = 0; i < 40; i++) names.push(Assets.levelButtonName(i));
 
 		let remaining = names.length;
+		const settle = () => {
+			remaining--;
+			if (remaining === 0) onComplete();
+		};
 
 		names.forEach((name) => {
 			const img = new Image();
-			img.onload = img.onerror = () => {
-				remaining--;
-				if (remaining === 0) onComplete();
-			};
-			img.src = "assets/images/" + name + ".png";
 			Assets.images[name] = img;
+			img.src = "assets/images/" + name + ".png";
+			//	Wait for decode(), not just load: a decoded-but-not-rasterised
+			//	image draws nothing the first time it hits ctx.drawImage() on a
+			//	fresh canvas, which left the puzzle blank until the first click.
+			img.decode().then(settle, settle);
 		});
 	},
 

@@ -188,11 +188,14 @@ export const PlayingState = {
 		if (size === 6) PlayingState.puzzleScale = 0.70;
 
 		PlayingState.scramble(2000);
-		PlayingState.drawPuzzle();
 
 		canvas.addEventListener("click", PlayingState.click);
 
 		parent.appendChild(root);
+
+		//	Draw once the canvas is attached (assets are already decoded by the
+		//	loading screen, so a single draw here is enough).
+		PlayingState.drawPuzzle();
 
 		PlayingState.lastTime = 0;
 		cancelAnimationFrame(PlayingState.animationFrame);
