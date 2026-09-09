@@ -2,11 +2,14 @@
 
 ## Unreleased
 
+## 3.1.0 — 2026-09-08
+
 - New animated background: soft blue clouds that gently drift and billow,
   replacing the old tiled sky image.
 - The game now fills your whole browser window. The puzzle, character, and
   speech bubble stay centred, the level / moves / time readout sits in the
   top-right corner, and the Return to Title button is in the bottom-left.
+- Refreshed the title screen and footer with a lighter look and a new typeface.
 - Rebuilt on a modern toolchain (Bun, Vite, TypeScript, React, Mantine) so
   future updates land faster and more reliably.
 
