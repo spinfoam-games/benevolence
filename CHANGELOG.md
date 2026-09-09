@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 3.1.1 — 2026-09-08
+
 - Fixed the puzzle tiles sometimes not showing up until you clicked the board.
 
 ## 3.1.0 — 2026-09-08

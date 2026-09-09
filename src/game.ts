@@ -10,7 +10,7 @@ import { Storage, type LevelCompletion, type CustomLevel } from "./core/storage.
 import { useGameStore } from "./store.ts";
 
 export const Game = {
-	VERSION: "3.1.0",
+	VERSION: "3.1.1",
 
 	levelCompletionData: [] as Array<LevelCompletion | undefined>,
 	customLevelList: [] as CustomLevel[],
