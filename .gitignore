@@ -19,6 +19,7 @@ flash-version/assets/promo/screenshots
 # Node / JS
 node_modules/
 dist/
+dist-itch/
 build/
 *.log
 npm-debug.log*

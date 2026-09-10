@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:itch": "tsc --noEmit && vite build --mode itch --outDir dist-itch --emptyOutDir",
+    "deploy:itch": "npm run build:itch && butler push dist-itch spinfoam-games/benevolence:html",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },

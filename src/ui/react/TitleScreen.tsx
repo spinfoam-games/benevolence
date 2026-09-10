@@ -7,7 +7,7 @@ import { HoverButton } from "./HoverButton.tsx"
 import { WasabiBar } from "./WasabiBar.tsx"
 import { StandardLevelsOverlay } from "./StandardLevelsOverlay.tsx"
 import { CustomLevelsOverlay } from "./CustomLevelsOverlay.tsx"
-import { Card, Group, ScrollArea, Stack, Text } from "@mantine/core"
+import { Anchor, Button, Card, Group, ScrollArea, Stack, Text, TextInput } from "@mantine/core"
 
 const INSTRUCTIONS =
 	"How to play:\n\n" +
@@ -71,6 +71,48 @@ export function TitleScreen() {
 						<Text fz='sm' style={{ whiteSpace: 'pre-line' }}>
 							{INSTRUCTIONS}
 						</Text>
+					</Card>
+				</Group>
+
+				<Group align="center" justify="center" pb='xl'>
+					<Card
+						withBorder w='60%'
+						bg='rgba(255, 255, 255, 0.5)'
+						p='md' shadow='md'
+						style={{ borderTop: '1px solid white', borderBottom: '1px solid var(--mantine-color-gray-1)' }}
+					>
+						<form
+							action="https://buttondown.com/api/emails/embed-subscribe/spinfoam-games"
+							method="post"
+							className="embeddable-buttondown-form"
+							target="_blank"
+						>
+							<Stack gap='xs'>
+								<Text fz='sm' fw={700}>
+									Subscribe to the Spinfoam Games newsletter to receive updates about
+									Benevolence (and other games too)!
+								</Text>
+								<Group align="flex-end" gap='lg' wrap='nowrap'>
+									<TextInput
+										type="email"
+										name="email"
+										id="bd-email"
+										aria-label="Email address"
+										placeholder="you@example.com"
+										style={{ flex: 1 }}
+										mr='sm'
+									/>
+									<Button type="submit" variant="filled">Subscribe</Button>
+								</Group>
+								<Anchor
+									href="https://buttondown.com/refer/spinfoam-games"
+									target="_blank"
+									fz='xs'
+								>
+									Powered by Buttondown.
+								</Anchor>
+							</Stack>
+						</form>
 					</Card>
 				</Group>
 

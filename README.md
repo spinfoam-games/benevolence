@@ -37,6 +37,17 @@ src/
 Deploys as a static site (default Cloudflare Pages / Worker pipeline); `base` is
 `/` and assets are referenced with root-relative URLs.
 
+### itch.io
+
+```
+bun run build:itch    # production build into dist-itch/ with relative asset URLs (--mode itch)
+bun run deploy:itch    # build:itch, then `butler push` to spinfoam-games/benevolence:html
+```
+
+`deploy:itch` needs [butler](https://itch.io/docs/butler/) on PATH and a one-time
+`butler login` (or `BUTLER_API_KEY` set for CI). The itch project (HTML kind,
+"played in browser", viewport) is already configured; butler handles every update.
+
 ## Cloud background
 
 The page background (`src/background/CloudBackground.tsx`) is a full-viewport
